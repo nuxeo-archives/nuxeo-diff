@@ -67,6 +67,7 @@ import com.google.inject.Inject;
 @Deploy("org.nuxeo.ecm.platform.commandline.executor")
 @Deploy("org.nuxeo.diff.pictures")
 @Deploy("org.nuxeo.ecm.platform.tag")
+@Deploy("org.nuxeo.ecm.platform.collections.core:OSGI-INF/collection-core-types-contrib.xml")
 public class DiffPicturesOperationsTest {
 
     protected static final Log log = LogFactory.getLog(DiffPicturesOperationsTest.class);
