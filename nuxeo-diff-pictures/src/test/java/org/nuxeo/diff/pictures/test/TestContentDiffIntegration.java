@@ -57,6 +57,7 @@ import com.google.inject.Inject;
 @Deploy("org.nuxeo.ecm.platform.picture.core")
 @Deploy("org.nuxeo.ecm.platform.commandline.executor")
 @Deploy("org.nuxeo.ecm.platform.tag")
+@Deploy("org.nuxeo.ecm.platform.collections.core:OSGI-INF/collection-core-types-contrib.xml")
 public class TestContentDiffIntegration {
 
     protected static final String ISLAND_PNG = "island.png";
