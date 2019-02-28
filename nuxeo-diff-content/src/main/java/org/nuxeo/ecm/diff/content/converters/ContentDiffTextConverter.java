@@ -26,7 +26,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.blobholder.BlobHolder;
 import org.nuxeo.ecm.core.convert.api.ConversionException;
+import org.nuxeo.ecm.core.convert.api.ConversionService;
 import org.nuxeo.ecm.core.convert.api.ConverterNotRegistered;
+import org.nuxeo.ecm.core.convert.cache.SimpleCachableBlobHolder;
+import org.nuxeo.runtime.api.Framework;
 
 /**
  * Text converter for content diff.
@@ -40,13 +43,20 @@ public class ContentDiffTextConverter extends AbstractContentDiffConverter {
 
     private static final String ANY_2_TEXT_CONVERTER_NAME = "any2text";
 
+    @Override
     public BlobHolder convert(BlobHolder blobHolder, Map<String, Serializable> parameters) throws ConversionException {
+        Blob convertedBlob = convert(blobHolder.getBlob(), parameters);
+        return new SimpleCachableBlobHolder(convertedBlob);
+    }
 
-        BlobHolder convertedBlobHolder = convert(ANY_2_TEXT_CONVERTER_NAME, blobHolder, parameters);
+    @Override
+    public Blob convert(Blob blob, Map<String, Serializable> parameters) throws ConversionException {
+
+        ConversionService cs = Framework.getService(ConversionService.class);
+        Blob convertedBlob = cs.convert(ANY_2_TEXT_CONVERTER_NAME, blob, parameters);
 
         String convertedBlobString = null;
         try {
-            Blob convertedBlob = convertedBlobHolder.getBlob();
             if (convertedBlob != null) {
                 convertedBlobString = convertedBlob.getString();
             }
@@ -54,18 +64,13 @@ public class ContentDiffTextConverter extends AbstractContentDiffConverter {
             throw new ConversionException("Error while getting converted blob string.");
         }
         if (StringUtils.isEmpty(convertedBlobString)) {
-            // Converted blob is an empty string, this means no text
-            // converter was found (see FullTextConverter). Throw
-            // appropriate exception.
-            String srcMimeType = null;
-            Blob blob = blobHolder.getBlob();
-            if (blob != null) {
-                srcMimeType = blob.getMimeType();
-            }
+            // Converted blob is an empty string, this means no text converter was found (see FullTextConverter)
+            // Throw appropriate exception.
+            String srcMimeType = blob == null ? null : blob.getMimeType();
             throw new ConverterNotRegistered(
                     String.format("for sourceMimeType = %s, destinationMimeType = text/plain", srcMimeType));
         }
-        return convertedBlobHolder;
+        return convertedBlob;
     }
 
 }

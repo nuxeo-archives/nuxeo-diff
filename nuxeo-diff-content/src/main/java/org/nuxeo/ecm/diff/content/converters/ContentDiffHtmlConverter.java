@@ -49,6 +49,7 @@ public class ContentDiffHtmlConverter extends AbstractContentDiffConverter {
 
     private static final String OFFICE_2_HTML_CONVERTER_NAME = "office2html";
 
+    @Override
     public BlobHolder convert(BlobHolder blobHolder, Map<String, Serializable> parameters) throws ConversionException {
 
         String converterName = null;
@@ -83,4 +84,36 @@ public class ContentDiffHtmlConverter extends AbstractContentDiffConverter {
         return convert(converterName, blobHolder, parameters);
     }
 
+    @Override
+    public Blob convert(Blob blob, Map<String, Serializable> parameters) throws ConversionException {
+
+        String converterName = null;
+
+        if (blob == null) {
+            LOGGER.warn("Trying to convert a null blob");
+            return blob;
+        }
+
+        // Get HTML converter name from blob mime type
+        String mimeType = blob.getMimeType();
+        ConversionService cs = Framework.getService(ConversionService.class);
+        converterName = cs.getConverterName(mimeType, HTML_MIME_TYPE);
+        // We don't want to use the "any2html" converter contributed for the
+        // preview in the case of non pdf blobs since it uses the following
+        // conversion chain : any2pdf --> pdf2html.
+        // In this case we want to use the "office2html" converter which
+        // gives a better result when applying the HTMLContentDiffer on the
+        // converted HTML.
+        if (ANY_2_HTML_CONVERTER_NAME.equals(converterName) && !"application/pdf".equals(mimeType)) {
+            converterName = OFFICE_2_HTML_CONVERTER_NAME;
+        }
+
+        // No converter found, throw appropriate exception
+        if (converterName == null) {
+            throw new ConverterNotRegistered(String.format("for sourceMimeType = %s, destinationMimeType = %s",
+                    mimeType, HTML_MIME_TYPE));
+        }
+
+        return cs.convert(converterName, blob, parameters);
+    }
 }
